@@ -1,7 +1,7 @@
 #!/bin/bash --
 #
 # Created 7/19/2022 by Ian Smith
-# Last Edit 7/26/2022 by Ian Smith
+# Last Edit 7/31/2022 by Ian Smith
 # Back Me Up! is a bash shell script for copying files to a backup drive and
 # sorting them into destination directories based on extensions.
 #
@@ -29,7 +29,7 @@ fi
 
 exec > >(tee -a $LOGFILE) 2>&1
 
-echo "$(date +%F_%H%M%S): Backup process started."
+echo "-=-=-=-=-=-=-=-=- $(date +%F_%H%M%S): Backup process started. -=-=-=-=-=-=-=-=- "
 NOEXCLUDES=1  # 1 (False) by default, meaning at least one Exclude is present
 ALLEXCLUDES=""  # We need to assemble all the excludes, so create a placeholder
 
