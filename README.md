@@ -1,3 +1,4 @@
+```
 # bmu
 bmu or Back Me Up is a Bash shell script for backing up files based on filename extension
 
@@ -27,3 +28,4 @@ mon = calendar month; * means every month
 dow = day of week; * means every day
 command = 'bash ~/bmu.sh' means start a new bash shell and run the commands stored in bmu.sh,
           which is located in the current user's home directory (~/).
+```
