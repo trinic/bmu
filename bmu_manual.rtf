@@ -1,0 +1,123 @@
+BMU / Back Me Up!
+Written by Ian Smith, July 2022.
+
+
+What is it?
+------------
+BMU is a Bash shell script making use of regular expressions and commands
+common to most Linux distros, and is documented ad nauseum so even new users
+can understand what's being done. This was a personal project produced to
+help expand my shell scripting skills.
+
+
+How does it work?
+------------------
+** This document is meant to be read side-by-side with the script. Items in
+** brackets correspond to elements of the code. The bmu.conf file is self-
+** documented.
+
+First, we load (or 'source') the config file [. ./bmu.conf], which provides a series
+of variables indicating what the user wants backed up, where it should go, and
+what extensions are important to them. It also gives the user the option of
+automatically excluding certain directories, and/or including their own.
+
+The default log file is bmu.log, and both it and the script itself should be in
+the same directory. If declared log file doesn't exist, or is not[!]
+[-w]ritable, we create it using [touch], and append[>>] a note of the event to
+that file [echo...>>$LOGFILE].
+
+Next, we determine the size of the log file with [du], [cut]ting all but first
+field [-f 1] of du's output so we're left with just a size in kilobytes.
+If the $LOGSIZE is >= [-ge] the declared $LOGMAX (5MB by default), make a note
+in the existing log, then rename the old log [mv $LOGFILE], constructing a new
+filename by trimming the .log extension from the old name [${LOGFILE/%.log}],
+appending an underscore and a timestamp [..._$(date...)], and a new .log
+extension at the end. Finally, create a new file with the original name, then
+note the event. Now that we're certain the log file exists and isn't too big,
+redirect all remaining standard output [exec > >], appending it to the log
+[(tee -a $LOGFILE)], and including any errors [2>&1]
+
+If we made it this far the log exists, and it's writable. We log the start of
+the backup process.
+
+We will assume that there is at least one exclusion, and set NOEXCLUDES to
+false (1). Next we initialize the list of exclusions by setting ALLEXCLUDES to
+an empty string.
+
+If the user wants to skip (1) the Downloads folder, we append[+=] the
+exclusion to the ALLEXCLUDES string. Using the $(echo...) command prevents
+the shell from expanding wildcards like * and ?, and preserves path names that
+may include spaces. The [-not -path] options, paired later with [-prune] will
+prevent the find command from wasting time traversing excluded directories.
+
+If the user wants to skip files and directories starting with '.', we add the
+exclusion in the same manner.
+
+Next, we deal with any additional directories the user wants to exclude. The [-n]
+test verifies the variable ADDTLEXCLUDES isn't empty. If it is, we can move on.
+Otherwise, we must iterate through all[@] their entries [for i in...] one by
+one and add them as exclusions, just like we did for Downloads and dot files.
+
+After all that, if ALLEXCLUDES is still empty, set NOEXCLUDES to true[0]. This
+will cause our function (described below) to construct the find command string
+without the content of ALLEXCLUDES. Otherwise, we log the exclusions for
+reference.
+
+Note: Lines in the script ending in " \" simply inform the shell that command
+      continues on the next line. This is done to keep this script
+      readable/printable.
+
+Next comes the meat of the script: the bmu function. A function allows us to
+perform the same procedure over and over with one block of code. We'll call the
+function, passing it parameters in order:
+          format [referenced as $1]
+          destination [referenced as $2]
+          document type [referenced as $3]
+
+The values of NOEXCLUDES and ALLEXCLUDES are already available, and they don't
+change depending on the extensions, so there's no need to pass them explicitly.
+
+A case statement evaluates NOEXCLUDES next. If the value is set to false
+[case 1], then we construct the find command with ALLEXCLUDES included. If it's
+true [case 0], we omit them.
+
+The [DEST]ination variable is populated, again using echo to ensure
+preservation of spaces and preventing shell expansion.
+
+Next, [FMT] builds the series of file extensions from the config file into a
+complete regular expression by adding quotes and some prefix/suffix characters:
+
+    ".*\.(ext1|ext2...)+$"
+
+It can be interpreted like this:
+    A matching file can have "any character(.), occurring any number
+    of times(*), followed by a period(\.), followed by one of the
+    extensions in parenthesis separated by the vertical bar (the symbol
+    meaning logical OR) (ext1|ext2...), occurring one or more times(+) at the
+    end of the string ($)."
+
+An if statement tests whether the [-d]irectory specified in $DEST is
+reachable, so we know it's available to copy to.
+
+We are now ready to construct the main find command and place it in [$COMBOCMD]:
+- [find] files [-type f], anywhere in the home dir [~/]
+    - (Note that find is recursive by default)
+- Select files using a [-regextype posix-extended] format, case-INsensitive
+  regular expression [-iregex], stored in [$FMT]
+- Skip any directories the user has opted to exclude, stored in [$ALLEXCLUDES]
+    (or omitting exclusions if NOEXCLUDES is set to 0)
+- [-print] each matching filename out for the log
+- Copy [cp] each matched file [{}] to the [$DEST]ination, [-u]pdating files
+  if they already exist, and [-p]reserving permissions if possible. (Volumes
+  formatted as FAT/FAT32 don't support Linux file attributes, which would
+  result in loss of permissions.)
+
+Now that the $COMBOCMD string is complete, we use [eval] to execute the command.
+If something went wrong, most likely either the item was disabled in the config
+file, or the destination directory was unavailable/didn't exist. Both success
+and failure are logged with echo commands.
+
+With the function complete, we can now call it multiple times, once for each
+included [... == 1] group of filename extensions.
+
+Finally, note the end of the backup sequence.
