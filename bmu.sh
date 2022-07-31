@@ -33,7 +33,7 @@ echo "$(date +%F_%H%M%S): Backup process started."
 NOEXCLUDES=1  # 1 (False) by default, meaning at least one Exclude is present
 ALLEXCLUDES=""  # We need to assemble all the excludes, so create a placeholder
 
-if [ $NODOWNLD == 1 ]; then ALLEXCLUDES+=$( echo '-not -path "./Downloads/*" ' ); fi
+if [ $NODOWNLD == 1 ]; then ALLEXCLUDES+=$( echo '-not -path "*/Downloads/*" ' ); fi
 if [ $NODOTDIRS == 1 ]; then ALLEXCLUDES+=$( echo '-not -path "*/.*" ' ) ; fi
 if [ -n "$ADDTLEXCLUDES" ]
   then
@@ -42,8 +42,7 @@ if [ -n "$ADDTLEXCLUDES" ]
 	    ALLEXCLUDES+="-not -path \"$i\" ";
   done
 fi
-if [ -z "$ALLEXCLUDES" ]; then NOEXCLUDES=0; else echo Final excludes are \
-  ${ALLEXCLUDES}; fi
+if [ -z "$ALLEXCLUDES" ]; then NOEXCLUDES=0; fi
 
 function bmu () {
   case $NOEXCLUDES in
@@ -52,9 +51,9 @@ function bmu () {
       FMT=$( echo "\".*\.("${1}")+$\"" )
       if [ -d "$DEST" ]
       then
-        echo Searching for files using regex "$FMT":
         COMBOCMD=$( echo find ~/ -type f -regextype posix-extended -iregex \
-          ${FMT} ${ALLEXCLUDES} -prune -print -exec cp -p -u {} \'"$DEST"\' \\\; )
+        ${FMT} ${ALLEXCLUDES} -prune -print -exec cp -p -u {} \'"$DEST"\' \\\; )
+        echo Searching for files using regex "$COMBOCMD":
         eval $COMBOCMD
       else
         if [ ${2} == 0 ]
