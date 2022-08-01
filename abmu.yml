@@ -1,0 +1,38 @@
+---
+- name: Ansible Back Me Up
+  # Created by Ian Smith, 8/1/2022
+  hosts: localhost
+  gather_facts: true
+  vars:
+    bmu_from: '~/'    # user home directory
+    bmu_to: '/mnt/ExtremeSSD/Bacup_{{ ansible_date_time.date }}/'  # if dest ends in /, dir is created
+
+  tasks:
+    - name: Creates destination directories
+      file:
+        path: '{{ bmu_to }}{{ item.type }}'
+        state: directory
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: 0775
+      with_items:
+        - {type: docs, exts: "odt|odg|odp|odb|ods|doc|docx|xls|xlsx|ppt|pptx|rtf|txt|csv|ctd|sla|pdf"}
+        - {type: pics, exts: "jpeg|jpg|gif|png|bmp|xcf|psd|tif|tiff|svg"}
+        - {type: progs, exts: "sh|jl|vb|yml"}
+        - {type: tdp, exts: "stl|scad|fpp"}   # Add more types/extensions both here and below!
+
+    - name: Find and copy files
+      command: >
+        find ~/ -type f -regextype posix-extended -iregex ".*\.({{ item.exts }})$"
+        -not -path "./Downloads/*"
+        -not -path "*/.*"
+        -not -path "./Apps/*"
+        -not -path "./Public/*"
+        -not -path "./Desktop/*"
+        -prune -print
+        -exec cp -p -u {} '{{ bmu_to }}{{ item.type }}' \;
+      with_items:
+        - {type: docs, exts: "odt|odg|odp|odb|ods|doc|docx|xls|xlsx|ppt|pptx|rtf|txt|csv|ctd|sla|pdf"}
+        - {type: pics, exts: "jpeg|jpg|gif|png|bmp|xcf|psd|tif|tiff|svg"}
+        - {type: progs, exts: "sh|jl|vb|yml"}
+        - {type: tdp, exts: "stl|scad|fpp"}
