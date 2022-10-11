@@ -1,6 +1,10 @@
 ```
 # bmu
-bmu or Back Me Up is a Bash shell script for backing up files based on filename extension
+bmu or Back Me Up is a script for backing up files based on filename extension. There are
+two versions - the more universal bmu.sh (a Bash shell script for Linux) and an Ansible
+version (abmu.yml). If you don't know what Ansible is, just ignore that file or delete it.
+If you DO know what Ansible is, I'll assume you know enough about the shell to modify the
+crontab entry below appropriately. ;)
 
 Installation:
 Place both bmu.sh and bmu.conf in the same folder. The log file will be created in the same
@@ -16,10 +20,11 @@ pretty user-friendly, so I use that.
 
 2. Make an entry at the bottom of the file like this one:
 
-00 3      * * *     bash ~/bmu.sh   # copy and past this line only!
+00 3      * * *     bash ~/bmu.sh   # copy and paste this line only!
 
 ^  ^      ^ ^ ^     ^
 m  h   dom/mon/dow  command
+
 Key:
 m = the minute, set to 00/on the hour
 h = the hour (in military time), set to 0300 / 3am
